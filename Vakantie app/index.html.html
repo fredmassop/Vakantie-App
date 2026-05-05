@@ -1,0 +1,1422 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0a7e8c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Vakantie Documenten</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f4f6f8; color: #1a1a1a; }
+  body { display: flex; flex-direction: column; padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
+
+  header { background: linear-gradient(135deg, #0a7e8c, #06525c); color: #fff; padding: 14px 16px; display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 6px rgba(0,0,0,.15); z-index: 10; flex-shrink: 0; }
+  header .back { background: none; border: none; color: #fff; font-size: 24px; cursor: pointer; padding: 4px 8px; border-radius: 6px; display: none; }
+  header .back.show { display: inline-block; }
+  header h1 { flex: 1; font-size: 18px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  header .icon-btn { background: rgba(255,255,255,.18); border: none; color: #fff; width: 38px; height: 38px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  header .icon-btn:active { background: rgba(255,255,255,.3); }
+
+  .search-wrap { background: #fff; padding: 10px 12px; border-bottom: 1px solid #e3e6ea; display: none; flex-shrink: 0; }
+  .search-wrap.show { display: block; }
+  .search-wrap input { width: 100%; padding: 10px 14px; border: 1px solid #d8dde2; border-radius: 22px; font-size: 15px; outline: none; background: #f4f6f8; }
+  .search-wrap input:focus { border-color: #0a7e8c; background: #fff; }
+
+  .sort-bar { background: #fff; padding: 8px 12px; border-bottom: 1px solid #e3e6ea; display: none; gap: 6px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; flex-shrink: 0; align-items: center; }
+  .sort-bar::-webkit-scrollbar { display: none; }
+  .sort-bar.show { display: flex; }
+  .sort-btn { white-space: nowrap; padding: 6px 12px; border-radius: 16px; border: 1px solid #d8dde2; background: #f4f6f8; font-size: 12px; color: #4a5560; cursor: pointer; flex-shrink: 0; }
+  .sort-btn.active { background: #0a7e8c; color: #fff; border-color: #0a7e8c; }
+  .sort-divider { width: 1px; height: 20px; background: #e3e6ea; flex-shrink: 0; margin: 0 2px; }
+  .filter-btn { white-space: nowrap; padding: 6px 12px; border-radius: 16px; border: 1px solid #d8dde2; background: #f4f6f8; font-size: 12px; color: #4a5560; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; gap: 5px; }
+  .filter-btn.active { background: #e65100; color: #fff; border-color: #e65100; }
+  .filter-badge { background: #fff; color: #e65100; border-radius: 10px; padding: 0 5px; font-size: 11px; font-weight: 700; }
+
+  main { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 14px; }
+
+  .empty { text-align: center; padding: 60px 20px; color: #6b7480; }
+  .empty .ico { font-size: 64px; margin-bottom: 14px; opacity: .5; }
+  .empty p { font-size: 15px; line-height: 1.5; }
+
+  /* SECTIE LABEL */
+  .section-label { font-size: 12px; color: #6b7480; text-transform: uppercase; letter-spacing: .6px; font-weight: 600; margin-bottom: 8px; padding: 0 2px; }
+
+  /* PERSOONLIJKE DOCUMENTEN */
+  .personal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+  .personal-card { background: #fff; border-radius: 14px; padding: 16px 14px 14px 18px; box-shadow: 0 1px 4px rgba(0,0,0,.08); cursor: pointer; display: flex; flex-direction: column; align-items: flex-start; gap: 5px; transition: transform .12s; position: relative; min-height: 110px; }
+  .personal-card:active { transform: scale(.97); }
+  .personal-card::before { content: ''; position: absolute; top: 0; left: 0; bottom: 0; width: 5px; border-radius: 14px 0 0 14px; }
+  .personal-card.paspoort::before        { background: #3f51b5; }
+  .personal-card.creditcard::before      { background: #e53935; }
+  .personal-card.reisverzekering::before { background: #2e7d32; }
+  .personal-card.rijbewijs::before       { background: #e65100; }
+  .personal-card .pc-emoji { font-size: 32px; }
+  .personal-card .pc-name { font-size: 14px; font-weight: 700; color: #1a1a1a; }
+  .personal-card .pc-count { font-size: 12px; color: #6b7480; }
+  .personal-card .pc-lock { position: absolute; top: 10px; right: 10px; font-size: 14px; }
+
+  /* VAKANTIE CARDS */
+  .vacation-grid { display: grid; gap: 10px; }
+  .vacation-card { background: #fff; border-radius: 14px; padding: 15px; box-shadow: 0 1px 3px rgba(0,0,0,.06); cursor: pointer; display: flex; align-items: center; gap: 14px; transition: transform .12s; }
+  .vacation-card:active { transform: scale(.98); }
+  .vacation-card .emoji { font-size: 34px; flex-shrink: 0; }
+  .vacation-card .info { flex: 1; min-width: 0; }
+  .vacation-card .name { font-size: 16px; font-weight: 600; color: #1a1a1a; margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .vacation-card .meta { font-size: 13px; color: #6b7480; }
+  .vacation-card .vac-btn { background: none; border: none; font-size: 20px; padding: 6px 7px; cursor: pointer; flex-shrink: 0; }
+
+  /* CATEGORIE */
+  .category-section { background: #fff; border-radius: 14px; margin-bottom: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+  .category-header { display: flex; align-items: center; gap: 10px; padding: 13px 16px; background: #fafbfc; border-bottom: 1px solid #eef0f3; font-weight: 600; color: #2a2a2a; }
+  .category-header .cat-emoji { font-size: 20px; }
+  .category-header .count { margin-left: auto; background: #e8edf1; color: #6b7480; padding: 2px 9px; border-radius: 10px; font-size: 12px; font-weight: 500; }
+  .pdf-list { list-style: none; }
+
+  .pdf-item { display: flex; align-items: center; gap: 9px; padding: 11px 12px; border-bottom: 1px solid #f2f4f6; cursor: pointer; transition: opacity .1s; }
+  .pdf-item:last-child { border-bottom: none; }
+  .pdf-item:active { opacity: .7; }
+  .pdf-item .pdf-icon { font-size: 20px; flex-shrink: 0; }
+  .pdf-item .pdf-name { flex: 1; font-size: 14px; color: #1a1a1a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .item-btn { background: none; border: none; font-size: 16px; padding: 5px 6px; cursor: pointer; color: #bbb; flex-shrink: 0; line-height: 1; }
+  .item-btn:active { color: #555; }
+  .lock-btn.locked { color: #e53935; }
+  .lock-btn.unlocked { color: #ccc; }
+
+  .note-item { padding: 11px 12px; border-bottom: 1px solid #f2f4f6; cursor: pointer; transition: opacity .1s; }
+  .note-item:last-child { border-bottom: none; }
+  .note-item:active { opacity: .7; }
+  .note-item-head { display: flex; align-items: center; gap: 9px; }
+  .note-item-head .ico { font-size: 18px; flex-shrink: 0; }
+  .note-item-head .title { flex: 1; font-size: 14px; font-weight: 500; color: #1a1a1a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .note-item-head .note-actions { display: flex; flex-shrink: 0; }
+  .note-item .preview { color: #6b7480; font-size: 13px; margin-top: 3px; margin-left: 27px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* KLEUREN */
+  .clr-geel   { background: #fff9c4 !important; }
+  .clr-groen  { background: #e8f5e9 !important; }
+  .clr-blauw  { background: #e3f2fd !important; }
+  .clr-roze   { background: #fce4ec !important; }
+  .clr-oranje { background: #fff3e0 !important; }
+  .clr-paars  { background: #f3e5f5 !important; }
+  .color-picker { display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
+  .color-dot { width: 28px; height: 28px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; box-shadow: 0 1px 3px rgba(0,0,0,.18); transition: transform .12s; flex-shrink: 0; }
+  .color-dot.selected { transform: scale(1.22); border-color: #0a7e8c !important; }
+
+  .toggle-row { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #f0f0f0; }
+  .toggle-row label { font-size: 14px; color: #1a1a1a; flex: 1; cursor: pointer; }
+  .toggle-row input[type=checkbox] { width: 20px; height: 20px; accent-color: #0a7e8c; cursor: pointer; flex-shrink: 0; }
+
+  .fab { position: fixed; bottom: calc(20px + env(safe-area-inset-bottom)); right: 20px; width: 58px; height: 58px; border-radius: 50%; background: linear-gradient(135deg, #0a7e8c, #06525c); color: #fff; border: none; font-size: 30px; box-shadow: 0 4px 12px rgba(10,126,140,.4); cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 5; }
+  .fab:active { transform: scale(.94); }
+
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: none; align-items: flex-end; justify-content: center; z-index: 100; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: #fff; border-radius: 20px 20px 0 0; width: 100%; max-width: 480px; padding: 22px 20px calc(22px + env(safe-area-inset-bottom)); box-shadow: 0 -4px 20px rgba(0,0,0,.15); max-height: 92vh; overflow-y: auto; }
+  .modal h2 { font-size: 18px; margin-bottom: 14px; color: #1a1a1a; }
+  .modal label { display: block; font-size: 13px; color: #6b7480; margin-bottom: 4px; margin-top: 12px; font-weight: 500; }
+  .modal input[type=text], .modal select, .modal textarea { width: 100%; padding: 11px 12px; border: 1px solid #d8dde2; border-radius: 8px; font-size: 15px; outline: none; background: #fff; font-family: inherit; }
+  .modal input[type=file] { width: 100%; padding: 8px 0; font-size: 14px; }
+  .modal input:focus, .modal select:focus, .modal textarea:focus { border-color: #0a7e8c; }
+  .modal .btn-row { display: flex; gap: 10px; margin-top: 20px; }
+  .modal button { flex: 1; padding: 13px; border-radius: 10px; border: none; font-size: 15px; font-weight: 600; cursor: pointer; }
+  .modal .btn-cancel { background: #e8edf1; color: #4a5560; }
+  .modal .btn-confirm { background: #0a7e8c; color: #fff; }
+  .modal .btn-confirm:disabled { background: #b0c0c4; cursor: default; }
+  .emoji-picker { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .emoji-picker button { background: #f4f6f8; border: 2px solid transparent; border-radius: 10px; padding: 7px 10px; font-size: 22px; cursor: pointer; }
+  .emoji-picker button.selected { border-color: #0a7e8c; background: #e6f3f5; }
+  .choice-btn { display: flex; align-items: center; gap: 14px; padding: 14px 16px; background: #f4f6f8; border: 2px solid transparent; border-radius: 12px; text-align: left; cursor: pointer; font-size: 14px; color: #1a1a1a; width: 100%; }
+  .choice-btn:active { background: #e8edf1; border-color: #0a7e8c; }
+  .choice-btn div { line-height: 1.4; }
+
+  .pdf-viewer { position: fixed; inset: 0; background: #2a2a2a; display: none; flex-direction: column; z-index: 200; padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
+  .pdf-viewer.show { display: flex; }
+  .viewer-toolbar { background: #1a1a1a; color: #fff; padding: 10px 14px; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .viewer-toolbar h3 { flex: 1; font-size: 15px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .viewer-toolbar button { background: rgba(255,255,255,.15); border: none; color: #fff; padding: 7px 12px; border-radius: 6px; font-size: 14px; cursor: pointer; }
+  .viewer-toolbar button:active { background: rgba(255,255,255,.3); }
+  .pdf-content { flex: 1; overflow: auto; -webkit-overflow-scrolling: touch; background: #2a2a2a; text-align: center; padding: 8px 0; }
+  .pdf-content canvas { display: block; margin: 8px auto; max-width: 100%; box-shadow: 0 2px 8px rgba(0,0,0,.4); background: #fff; }
+  .pdf-loading { color: #fff; padding: 40px; text-align: center; font-size: 14px; }
+
+  .img-viewer { position: fixed; inset: 0; background: #111; display: none; flex-direction: column; z-index: 200; padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
+  .img-viewer.show { display: flex; }
+  .img-content { flex: 1; overflow: auto; display: flex; align-items: center; justify-content: center; padding: 12px; }
+  .img-content img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 4px; touch-action: pinch-zoom; }
+
+  .toast { position: fixed; bottom: calc(88px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); background: #1a1a1a; color: #fff; padding: 10px 18px; border-radius: 22px; font-size: 14px; opacity: 0; transition: opacity .25s; pointer-events: none; z-index: 300; max-width: 90%; text-align: center; white-space: nowrap; }
+  .toast.show { opacity: .95; }
+
+  .install-banner { background: #fff8e1; padding: 10px 14px; font-size: 13px; color: #5a4a00; border-bottom: 1px solid #f0e0a0; display: none; align-items: center; gap: 10px; flex-shrink: 0; }
+  .install-banner.show { display: flex; }
+  .install-banner button { background: #d4a017; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-size: 13px; cursor: pointer; }
+  .install-banner .close { background: none; color: #5a4a00; }
+  .help-tab { white-space:nowrap; padding:7px 14px; border-radius:18px; border:1px solid #d8dde2; background:#f4f6f8; font-size:13px; font-weight:500; color:#4a5560; cursor:pointer; flex-shrink:0; }
+  .help-tab.active { background:#0a7e8c; color:#fff; border-color:#0a7e8c; }
+  .help-section { margin-bottom:16px; }
+  .help-section h3 { font-size:15px; font-weight:700; color:#0a7e8c; margin-bottom:8px; display:flex; align-items:center; gap:8px; }
+  .help-step { display:flex; gap:12px; margin-bottom:10px; align-items:flex-start; }
+  .help-step .nr { background:#0a7e8c; color:#fff; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; flex-shrink:0; margin-top:1px; }
+  .help-step .txt { flex:1; }
+  .help-tip { background:#e6f3f5; border-left:3px solid #0a7e8c; padding:10px 12px; border-radius:0 8px 8px 0; margin-bottom:10px; font-size:13px; color:#1a1a1a; }
+  .help-icon { display:inline-block; width:26px; height:26px; background:#f4f6f8; border-radius:6px; text-align:center; line-height:26px; font-size:14px; margin-right:2px; }
+</style>
+</head>
+<body>
+
+<header>
+  <button class="back" id="backBtn">&#8592;</button>
+  <h1 id="headerTitle">Mijn Vakanties</h1>
+  <button class="icon-btn" id="helpBtn" title="Handleiding">&#63;</button>
+  <button class="icon-btn" id="startFilterBtn" title="Selecteer wat je wilt zien">&#9881;&#65039;</button>
+  <button class="icon-btn" id="searchBtn">&#128269;</button>
+</header>
+
+<div class="install-banner" id="installBanner">
+  <span>Installeer op startscherm voor snelle toegang.</span>
+  <button id="installBtn">Installeren</button>
+  <button class="close" id="installClose">&times;</button>
+</div>
+
+<div class="search-wrap" id="searchWrap">
+  <input type="search" id="searchInput" placeholder="Zoek documenten en vakanties..." autocomplete="off">
+</div>
+
+<div class="sort-bar" id="sortBar">
+  <button class="sort-btn active" data-sort="added-desc">Nieuwste eerst</button>
+  <button class="sort-btn" data-sort="added-asc">Oudste eerst</button>
+  <button class="sort-btn" data-sort="name-asc">A &#8594; Z</button>
+  <button class="sort-btn" data-sort="name-desc">Z &#8594; A</button>
+  <div class="sort-divider"></div>
+  <button class="filter-btn" id="filterBtn">&#9660; Filter</button>
+</div>
+
+<main id="mainView"><div id="content"></div></main>
+<button class="fab" id="fab">+</button>
+
+<!-- Nieuwe vakantie -->
+<div class="modal-overlay" id="vacationModal">
+  <div class="modal">
+    <h2>Nieuwe vakantie</h2>
+    <label for="vacationName">Naam</label>
+    <input type="text" id="vacationName" placeholder="Bijv. Sardinië 2026" maxlength="60">
+    <label>Icoon</label>
+    <div class="emoji-picker" id="emojiPicker"></div>
+    <div class="btn-row">
+      <button class="btn-cancel" data-close>Annuleren</button>
+      <button class="btn-confirm" id="vacationSave">Opslaan</button>
+    </div>
+  </div>
+</div>
+
+<!-- Wat toevoegen? -->
+<div class="modal-overlay" id="addChoiceModal">
+  <div class="modal">
+    <h2>Wat wil je toevoegen?</h2>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px;">
+      <button class="choice-btn" id="addChoiceFile">
+        <span style="font-size:26px;">📁</span>
+        <div><strong>Bestand</strong><br><small style="color:#6b7480;">PDF, foto, Word, Excel, en meer</small></div>
+      </button>
+      <button class="choice-btn" id="addChoiceNote">
+        <span style="font-size:26px;">📝</span>
+        <div><strong>Notitie</strong><br><small style="color:#6b7480;">Reserveringsnummer, telefoon, info</small></div>
+      </button>
+      <button class="choice-btn" id="addChoiceCat">
+        <span style="font-size:26px;">🏷️</span>
+        <div><strong>Eigen categorie</strong><br><small style="color:#6b7480;">Maak een nieuwe categorie aan</small></div>
+      </button>
+    </div>
+    <div class="btn-row" style="margin-top:16px;">
+      <button class="btn-cancel" data-close>Annuleren</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bestand uploaden -->
+<div class="modal-overlay" id="uploadModal">
+  <div class="modal">
+    <h2 id="uploadModalTitle">Bestand toevoegen</h2>
+    <label for="fileCategory">Categorie</label>
+    <select id="fileCategory"></select>
+    <label for="fileCustomName">Naam (optioneel)</label>
+    <input type="text" id="fileCustomName" placeholder="Laat leeg voor bestandsnaam" maxlength="80">
+    <label>Bestand(en)</label>
+    <input type="file" id="fileInput" multiple>
+    <label>Kleur</label>
+    <div class="color-picker" id="fileColorPicker"></div>
+    <div class="toggle-row">
+      <label for="fileProtected">&#128274; Beveiligd met vingerafdruk</label>
+      <input type="checkbox" id="fileProtected">
+    </div>
+    <div class="btn-row">
+      <button class="btn-cancel" data-close>Annuleren</button>
+      <button class="btn-confirm" id="fileSave" disabled>Opslaan</button>
+    </div>
+  </div>
+</div>
+
+<!-- Notitie -->
+<div class="modal-overlay" id="noteModal">
+  <div class="modal">
+    <h2 id="noteModalTitle">Nieuwe notitie</h2>
+    <label for="noteTitle">Titel</label>
+    <input type="text" id="noteTitle" placeholder="Bijv. Hotel reserveringsnummer" maxlength="80">
+    <label for="noteContent">Inhoud</label>
+    <textarea id="noteContent" rows="6" placeholder="Schrijf hier je notitie..." style="width:100%;padding:11px 12px;border:1px solid #d8dde2;border-radius:8px;font-size:15px;outline:none;background:#fff;font-family:inherit;resize:vertical;"></textarea>
+    <label>Kleur</label>
+    <div class="color-picker" id="noteColorPicker"></div>
+    <div class="toggle-row">
+      <label for="noteProtected">&#128274; Beveiligd met vingerafdruk</label>
+      <input type="checkbox" id="noteProtected">
+    </div>
+    <div class="btn-row">
+      <button class="btn-cancel" data-close>Annuleren</button>
+      <button class="btn-confirm" id="noteSave">Opslaan</button>
+    </div>
+  </div>
+</div>
+
+<!-- Eigen categorie -->
+<div class="modal-overlay" id="catModal">
+  <div class="modal">
+    <h2>Eigen categorie</h2>
+    <label>Icoon</label>
+    <div class="emoji-picker" id="catEmojiPicker"></div>
+    <label for="catName">Naam</label>
+    <input type="text" id="catName" placeholder="Bijv. Paspoort & ID" maxlength="40">
+    <div class="btn-row">
+      <button class="btn-cancel" data-close>Annuleren</button>
+      <button class="btn-confirm" id="catSave">Toevoegen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Filter categorieën -->
+<div class="modal-overlay" id="filterModal">
+  <div class="modal">
+    <h2>Filter op categorie</h2>
+    <div id="filterCatList" style="display:flex;flex-direction:column;gap:2px;margin-top:4px;"></div>
+    <div class="btn-row" style="margin-top:16px;">
+      <button class="btn-cancel" id="filterReset">Alles tonen</button>
+      <button class="btn-confirm" id="filterApply">Toepassen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Hernoemen -->
+<div class="modal-overlay" id="renameModal">
+  <div class="modal">
+    <h2 id="renameModalTitle">Hernoemen</h2>
+    <label for="renameInput">Nieuwe naam</label>
+    <input type="text" id="renameInput" maxlength="80">
+    <div class="btn-row">
+      <button class="btn-cancel" data-close>Annuleren</button>
+      <button class="btn-confirm" id="renameSave">Opslaan</button>
+    </div>
+  </div>
+</div>
+
+<!-- PDF Viewer -->
+<div class="pdf-viewer" id="pdfViewer">
+  <div class="viewer-toolbar">
+    <button id="pdfClose">&#10005;</button>
+    <h3 id="pdfViewerTitle"></h3>
+    <button id="pdfShare" title="Delen">&#128280;</button>
+    <button id="pdfZoomOut">&#8722;</button>
+    <button id="pdfZoomIn">+</button>
+  </div>
+  <div class="pdf-content" id="pdfContent"><div class="pdf-loading">Laden...</div></div>
+</div>
+
+<!-- Afbeelding Viewer -->
+<div class="img-viewer" id="imgViewer">
+  <div class="viewer-toolbar">
+    <button id="imgClose">&#10005;</button>
+    <h3 id="imgViewerTitle"></h3>
+    <button id="imgShare" title="Delen">&#128280;</button>
+  </div>
+  <div class="img-content" id="imgContent"></div>
+</div>
+
+<!-- Handleiding -->
+<div class="modal-overlay" id="helpModal">
+  <div class="modal" style="border-radius:20px 20px 0 0;max-height:90vh;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <h2 style="margin:0;">📖 Handleiding</h2>
+      <button data-close style="background:none;border:none;font-size:22px;color:#6b7480;cursor:pointer;flex:none;padding:0 4px;">&times;</button>
+    </div>
+
+    <!-- Tabs -->
+    <div style="display:flex;gap:6px;margin-bottom:18px;overflow-x:auto;scrollbar-width:none;">
+      <button class="help-tab active" data-tab="start">Start</button>
+      <button class="help-tab" data-tab="persoonlijk">Persoonlijk</button>
+      <button class="help-tab" data-tab="vakanties">Vakanties</button>
+      <button class="help-tab" data-tab="bestanden">Bestanden</button>
+      <button class="help-tab" data-tab="beveiliging">Beveiliging</button>
+      <button class="help-tab" data-tab="tips">Tips</button>
+    </div>
+
+    <!-- Tab inhoud -->
+    <div id="helpContent" style="font-size:14px;line-height:1.7;color:#2a2a2a;"></div>
+  </div>
+</div>
+
+<!-- Startscherm filter -->
+<div class="modal-overlay" id="startFilterModal">
+  <div class="modal">
+    <h2>&#128269; Wat wil je zien?</h2>
+    <p style="font-size:14px;color:#6b7480;margin-bottom:14px;">Selecteer wat je op het hoofdscherm wilt zien.</p>
+    <div style="font-size:12px;color:#6b7480;text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:8px;">Persoonlijke documenten</div>
+    <div id="sfPersonal" style="display:flex;flex-direction:column;gap:2px;margin-bottom:16px;"></div>
+    <div style="font-size:12px;color:#6b7480;text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:8px;">Vakanties</div>
+    <div id="sfVacations" style="display:flex;flex-direction:column;gap:2px;"></div>
+    <div class="btn-row" style="margin-top:20px;">
+      <button class="btn-cancel" id="sfSelectAll">Alles</button>
+      <button class="btn-confirm" id="sfApply">Toepassen</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+  if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+  const COLORS = {
+    none:   {label:'Geen',   bg:'#fff',    dot:'#ddd'},
+    geel:   {label:'Geel',   bg:'#fff9c4', dot:'#f9d700'},
+    groen:  {label:'Groen',  bg:'#e8f5e9', dot:'#4caf50'},
+    blauw:  {label:'Blauw',  bg:'#e3f2fd', dot:'#2196f3'},
+    roze:   {label:'Roze',   bg:'#fce4ec', dot:'#e91e63'},
+    oranje: {label:'Oranje', bg:'#fff3e0', dot:'#ff9800'},
+    paars:  {label:'Paars',  bg:'#f3e5f5', dot:'#9c27b0'},
+  };
+
+  const DEFAULT_CATS = {
+    vlucht:      {label:'Vlucht',      emoji:'✈️'},
+    hotel:       {label:'Hotel',       emoji:'🏨'},
+    auto:        {label:'Autohuur',    emoji:'🚗'},
+    parkeren:    {label:'Parkeren',    emoji:'🅿️'},
+    trein:       {label:'Trein/Bus',   emoji:'🚆'},
+    activiteit:  {label:'Activiteit',  emoji:'🎯'},
+    verzekering: {label:'Verzekering', emoji:'🛡️'},
+    overig:      {label:'Overig',      emoji:'📄'},
+  };
+
+  const PERSONAL_CATS = {
+    paspoort:        {label:'Paspoort',        emoji:'🛂', defaultProtected:true},
+    creditcard:      {label:'Creditcard',      emoji:'💳', defaultProtected:true},
+    reisverzekering: {label:'Reisverzekering', emoji:'🛡️', defaultProtected:false},
+    rijbewijs:       {label:'Rijbewijs',       emoji:'🚗', defaultProtected:false},
+  };
+
+  const PERSONAL_ID = '__personal__';
+  const VAC_EMOJIS  = ['🏖️','✈️','🏔️','🌴','🎡','🗺️','⛵','🌍','🏠','🎪'];
+  const CAT_EMOJIS  = ['🛂','🎫','💊','📸','🎒','💳','🔑','🌊','🏛️','🚢','🍽️','🏟️','🎭','🌋','🛕'];
+
+  function getFileInfo(mimeType, fileName) {
+    const ext=(fileName||'').split('.').pop().toLowerCase();
+    if (mimeType==='application/pdf'||ext==='pdf') return {icon:'📄',type:'pdf'};
+    if ((mimeType||'').startsWith('image/')||['jpg','jpeg','png','gif','webp','svg','bmp','heic','avif'].includes(ext)) return {icon:'🖼️',type:'image'};
+    if (['doc','docx'].includes(ext)||(mimeType||'').includes('word')) return {icon:'📝',type:'office'};
+    if (['xls','xlsx'].includes(ext)||(mimeType||'').includes('excel')||(mimeType||'').includes('spreadsheet')) return {icon:'📊',type:'office'};
+    if (['ppt','pptx'].includes(ext)||(mimeType||'').includes('presentation')) return {icon:'📊',type:'office'};
+    if (ext==='txt'||(mimeType||'').startsWith('text/')) return {icon:'📃',type:'text'};
+    return {icon:'📎',type:'other'};
+  }
+
+  // ===== DB =====
+  const DB_NAME='vakantiePDFs', DB_VER=3;
+  let db;
+  function openDB() {
+    return new Promise((res,rej) => {
+      const r=indexedDB.open(DB_NAME,DB_VER);
+      r.onupgradeneeded=e=>{
+        const d=e.target.result;
+        if(!d.objectStoreNames.contains('vacations'))d.createObjectStore('vacations',{keyPath:'id'});
+        if(!d.objectStoreNames.contains('pdfs')){const s=d.createObjectStore('pdfs',{keyPath:'id'});s.createIndex('vacationId','vacationId',{unique:false});}
+        if(!d.objectStoreNames.contains('notes')){const s=d.createObjectStore('notes',{keyPath:'id'});s.createIndex('vacationId','vacationId',{unique:false});}
+      };
+      r.onsuccess=e=>{db=e.target.result;res(db);};
+      r.onerror=e=>rej(e.target.error);
+    });
+  }
+  const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+  const tx=(s,m='readonly')=>db.transaction(s,m);
+  function dbGet(store,id){return new Promise((r,j)=>{const q=tx([store]).objectStore(store).get(id);q.onsuccess=()=>r(q.result);q.onerror=()=>j(q.error);});}
+  function dbGetAll(store){return new Promise((r,j)=>{const q=tx([store]).objectStore(store).getAll();q.onsuccess=()=>r(q.result||[]);q.onerror=()=>j(q.error);});}
+  function dbPut(store,obj){return new Promise((r,j)=>{const q=tx([store],'readwrite').objectStore(store).put(obj);q.onsuccess=()=>r();q.onerror=()=>j(q.error);});}
+  function dbDelete(store,id){return new Promise((r,j)=>{const q=tx([store],'readwrite').objectStore(store).delete(id);q.onsuccess=()=>r();q.onerror=()=>j(q.error);});}
+  function dbIdx(store,idx,val){return new Promise((r,j)=>{const q=tx([store]).objectStore(store).index(idx).getAll(val);q.onsuccess=()=>r(q.result||[]);q.onerror=()=>j(q.error);});}
+  async function dbDeleteVacation(id){
+    const[f,n]=await Promise.all([dbIdx('pdfs','vacationId',id),dbIdx('notes','vacationId',id)]);
+    const t=tx(['vacations','pdfs','notes'],'readwrite');
+    t.objectStore('vacations').delete(id);
+    f.forEach(x=>t.objectStore('pdfs').delete(x.id));
+    n.forEach(x=>t.objectStore('notes').delete(x.id));
+    return new Promise((r,j)=>{t.oncomplete=r;t.onerror=()=>j(t.error);});
+  }
+
+  // ===== State =====
+  const S={
+    view:'list', vacId:null, personalCat:null,
+    q:'', sort:'added-desc',
+    vacEmoji:VAC_EMOJIS[0], catEmoji:CAT_EMOJIS[0],
+    fileColor:'none', noteColor:'none',
+    uploadVacId:null,
+    bioAvailable:false,
+    filterCats: null,
+    // Startscherm filter: welke personal cats en vacanties zichtbaar
+    visiblePersonal: null, // null = alles, anders Set van keys
+    visibleVacations: null, // null = alles, anders Set van ids
+  };
+
+  const $=s=>document.querySelector(s);
+  const $$=s=>document.querySelectorAll(s);
+
+  function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('show'),2400);}
+  function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+  function sortItems(items,key){
+    const[field,dir]=key.split('-');
+    return[...items].sort((a,b)=>{
+      const va=field==='name'?(a.name||a.title||'').toLowerCase():(a.added||0);
+      const vb=field==='name'?(b.name||b.title||'').toLowerCase():(b.added||0);
+      if(va<vb)return dir==='asc'?-1:1;
+      if(va>vb)return dir==='asc'?1:-1;
+      return 0;
+    });
+  }
+
+  function getAllCats(vac){
+    const cats={...DEFAULT_CATS};
+    (vac?.customCategories||[]).forEach(cc=>{cats[cc.id]={label:cc.label,emoji:cc.emoji};});
+    return cats;
+  }
+
+  // ===== Biometrie =====
+  async function isBioAvailable(){
+    try{return!!(window.PublicKeyCredential&&await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable());}catch{return false;}
+  }
+  async function biometricAuth(){
+    let cid=localStorage.getItem('bioCredId');
+    if(!cid){
+      try{
+        const cred=await navigator.credentials.create({publicKey:{
+          challenge:crypto.getRandomValues(new Uint8Array(32)),
+          rp:{name:'Vakantie Documenten'},
+          user:{id:crypto.getRandomValues(new Uint8Array(16)),name:'gebruiker',displayName:'Gebruiker'},
+          pubKeyCredParams:[{alg:-7,type:'public-key'},{alg:-257,type:'public-key'}],
+          authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required'},
+          timeout:60000,
+        }});
+        cid=btoa(String.fromCharCode(...new Uint8Array(cred.rawId)));
+        localStorage.setItem('bioCredId',cid);
+        return true;
+      }catch{toast('Vingerafdruk registratie mislukt');return false;}
+    }
+    try{
+      const rawId=Uint8Array.from(atob(cid),c=>c.charCodeAt(0));
+      await navigator.credentials.get({publicKey:{
+        challenge:crypto.getRandomValues(new Uint8Array(32)),
+        allowCredentials:[{type:'public-key',id:rawId}],
+        userVerification:'required',timeout:60000,
+      }});
+      return true;
+    }catch{toast('Vingerafdruk niet herkend');return false;}
+  }
+
+  // Controleer biometrie voor openen van beveiligd item:
+  // - Telefoon zonder registratie: registreer nu → open
+  // - Telefoon met registratie: vraag vingerafdruk
+  // - Laptop (registratie mislukt): open gewoon
+  async function checkBio() {
+    if (!S.bioAvailable) return true;
+    const hadCred = !!localStorage.getItem('bioCredId');
+    const ok = await biometricAuth();
+    if (ok) return true;
+    if (!hadCred) return true; // registratie mislukt (geen lezer) → toch openen
+    return false; // herkend credential maar auth mislukt → blokkeren
+  }
+
+  async function toggleLock(store,id){
+    const item=await dbGet(store,id);if(!item)return;
+    if(item.protected){
+      if(S.bioAvailable){const ok=await checkBio();if(!ok)return;}
+      item.protected=false;toast('🔓 Beveiliging uitgeschakeld');
+    }else{
+      item.protected=true;toast('🔒 Beveiligd met vingerafdruk');
+    }
+    await dbPut(store,item);render();
+  }
+
+  // ===== Pickers =====
+  function renderColorPicker(id,cur,onChange){
+    const el=document.getElementById(id);
+    el.innerHTML=Object.entries(COLORS).map(([k,v])=>`
+      <div class="color-dot${cur===k?' selected':''}" style="background:${v.bg};border-color:${k==='none'?'#ccc':v.dot};${k==='none'?'border-style:dashed;border-width:2px;':''}" data-clr="${k}" title="${v.label}"></div>`).join('');
+    el.querySelectorAll('.color-dot').forEach(d=>d.addEventListener('click',()=>{onChange(d.dataset.clr);renderColorPicker(id,d.dataset.clr,onChange);}));
+  }
+  function renderEmojiPicker(id,emojis,selected,onSelect){
+    const el=document.getElementById(id);
+    el.innerHTML=emojis.map(e=>`<button data-e="${e}" class="${e===selected?'selected':''}">${e}</button>`).join('');
+    el.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{onSelect(b.dataset.e);renderEmojiPicker(id,emojis,b.dataset.e,onSelect);}));
+  }
+
+  function closeModals(){$$('.modal-overlay').forEach(m=>m.classList.remove('show'));}
+
+  // ===== Startscherm filter =====
+  async function openStartFilter(){
+    const vacs = await dbGetAll('vacations');
+    const sfp = $('#sfPersonal');
+    const sfv = $('#sfVacations');
+
+    // Persoonlijke documenten
+    sfp.innerHTML = Object.entries(PERSONAL_CATS).map(([key,pc])=>{
+      const checked = !S.visiblePersonal || S.visiblePersonal.has(key);
+      return `<label style="display:flex;align-items:center;gap:12px;padding:10px 4px;font-size:15px;cursor:pointer;border-bottom:1px solid #f2f4f6;">
+        <input type="checkbox" data-sfp="${key}" ${checked?'checked':''} style="width:20px;height:20px;accent-color:#0a7e8c;cursor:pointer;">
+        <span>${pc.emoji} ${pc.label}</span>
+      </label>`;
+    }).join('');
+
+    // Vakanties
+    if(vacs.length){
+      sfv.innerHTML = vacs.sort((a,b)=>(b.created||0)-(a.created||0)).map(v=>{
+        const checked = !S.visibleVacations || S.visibleVacations.has(v.id);
+        return `<label style="display:flex;align-items:center;gap:12px;padding:10px 4px;font-size:15px;cursor:pointer;border-bottom:1px solid #f2f4f6;">
+          <input type="checkbox" data-sfv="${v.id}" ${checked?'checked':''} style="width:20px;height:20px;accent-color:#0a7e8c;cursor:pointer;">
+          <span>${v.emoji} ${esc(v.name)}</span>
+        </label>`;
+      }).join('');
+    } else {
+      sfv.innerHTML = `<div style="font-size:14px;color:#aaa;padding:8px 0;">Nog geen vakanties aangemaakt</div>`;
+    }
+
+    $('#startFilterModal').classList.add('show');
+  }
+
+  function applyStartFilter(){
+    const pBoxes = [...$$('#sfPersonal input[type=checkbox]')];
+    const vBoxes = [...$$('#sfVacations input[type=checkbox]')];
+    const pChecked = pBoxes.filter(b=>b.checked).map(b=>b.dataset.sfp);
+    const vChecked = vBoxes.filter(b=>b.checked).map(b=>b.dataset.sfv);
+    S.visiblePersonal  = pChecked.length === pBoxes.length ? null : new Set(pChecked);
+    S.visibleVacations = vChecked.length === vBoxes.length ? null : new Set(vChecked);
+    // Sla op in localStorage
+    localStorage.setItem('sfPersonal',  S.visiblePersonal  ? JSON.stringify([...S.visiblePersonal])  : '');
+    localStorage.setItem('sfVacations', S.visibleVacations ? JSON.stringify([...S.visibleVacations]) : '');
+    closeModals();
+    render();
+  }
+
+  function loadStartFilter(){
+    const p = localStorage.getItem('sfPersonal');
+    const v = localStorage.getItem('sfVacations');
+    S.visiblePersonal  = p && p !== '' ? new Set(JSON.parse(p)) : null;
+    S.visibleVacations = v && v !== '' ? new Set(JSON.parse(v)) : null;
+  }
+
+  // ===== Deel functie =====
+  let currentShareFile = null; // {data, name, mimeType}
+
+  async function shareFile(data, name, mimeType){
+    if(!data){ toast('Geen bestand om te delen'); return; }
+    const blob = new Blob([data], { type: mimeType || 'application/octet-stream' });
+    const file = new File([blob], name, { type: mimeType || 'application/octet-stream' });
+    if(navigator.share && navigator.canShare && navigator.canShare({ files:[file] })){
+      try{
+        await navigator.share({ files:[file], title: name });
+        return;
+      }catch(e){
+        if(e.name==='AbortError') return; // gebruiker annuleerde
+        console.warn('Share mislukt, fallback naar download:', e);
+      }
+    }
+    // Fallback: download
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href=url; a.download=name;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url), 1000);
+    toast('Bestand gedownload');
+  }
+
+  // ===== Vakantie modal =====
+  function openVacationModal(){
+    S.vacEmoji=VAC_EMOJIS[0];$('#vacationName').value='';
+    renderEmojiPicker('emojiPicker',VAC_EMOJIS,S.vacEmoji,e=>{S.vacEmoji=e;});
+    $('#vacationModal').classList.add('show');
+    setTimeout(()=>$('#vacationName').focus(),120);
+  }
+  async function saveVacation(){
+    const name=$('#vacationName').value.trim();
+    if(!name){toast('Geef de vakantie een naam');return;}
+    await dbPut('vacations',{id:uid(),name,emoji:S.vacEmoji,created:Date.now()});
+    closeModals();toast('Vakantie opgeslagen');render();
+  }
+
+  // ===== Upload modal =====
+  async function openUploadModal(vacId,presetCat){
+    S.uploadVacId=vacId;
+    const isPersonal=vacId===PERSONAL_ID;
+    let cats={};
+    if(isPersonal){cats={...PERSONAL_CATS};}
+    else{const vac=await dbGet('vacations',vacId);cats=getAllCats(vac);}
+    $('#fileCategory').innerHTML=Object.entries(cats).map(([k,v])=>`<option value="${k}">${v.emoji} ${v.label}</option>`).join('');
+    if(presetCat)$('#fileCategory').value=presetCat;
+    $('#fileInput').value='';$('#fileCustomName').value='';$('#fileSave').disabled=true;
+    S.fileColor='none';
+    const defProtected=presetCat&&PERSONAL_CATS[presetCat]?PERSONAL_CATS[presetCat].defaultProtected:false;
+    $('#fileProtected').checked=defProtected;
+    renderColorPicker('fileColorPicker','none',c=>{S.fileColor=c;});
+    $('#uploadModalTitle').textContent=isPersonal?'Document toevoegen':'Bestand toevoegen';
+    $('#uploadModal').classList.add('show');
+  }
+  async function saveFile(){
+    const files=$('#fileInput').files;if(!files?.length)return;
+    const cat=$('#fileCategory').value;
+    const customName=$('#fileCustomName').value.trim();
+    const btn=$('#fileSave');btn.disabled=true;btn.textContent='Bezig...';
+    try{
+      for(const f of files){
+        const buf=await f.arrayBuffer();
+        const name=(files.length===1&&customName)?customName:f.name.replace(/\.[^.]+$/,'');
+        await dbPut('pdfs',{id:uid(),vacationId:S.uploadVacId,name,category:cat,fileName:f.name,mimeType:f.type,size:f.size,data:buf,color:S.fileColor,protected:$('#fileProtected').checked,added:Date.now()});
+      }
+      closeModals();toast(files.length===1?'Bestand opgeslagen':`${files.length} bestanden opgeslagen`);render();
+    }catch(e){toast('Fout: '+e.message);}
+    finally{btn.textContent='Opslaan';}
+  }
+
+  // ===== Notitie modal =====
+  let editNoteId=null;
+  function openNoteModal(noteId){
+    editNoteId=noteId||null;
+    if(noteId){
+      dbGet('notes',noteId).then(n=>{
+        $('#noteModalTitle').textContent='Notitie bewerken';
+        $('#noteTitle').value=n.title||'';$('#noteContent').value=n.content||'';
+        S.noteColor=n.color||'none';$('#noteProtected').checked=n.protected||false;
+        renderColorPicker('noteColorPicker',S.noteColor,c=>{S.noteColor=c;});
+        $('#noteModal').classList.add('show');setTimeout(()=>$('#noteContent').focus(),120);
+      });
+    }else{
+      $('#noteModalTitle').textContent='Nieuwe notitie';
+      $('#noteTitle').value='';$('#noteContent').value='';
+      S.noteColor='none';$('#noteProtected').checked=false;
+      renderColorPicker('noteColorPicker','none',c=>{S.noteColor=c;});
+      $('#noteModal').classList.add('show');setTimeout(()=>$('#noteTitle').focus(),120);
+    }
+  }
+  async function saveNote(){
+    const title=$('#noteTitle').value.trim(),content=$('#noteContent').value.trim();
+    if(!title&&!content){toast('Notitie is leeg');return;}
+    const vacId=S.view==='personal'?PERSONAL_ID:(S.vacId||null);
+    let n=editNoteId?await dbGet('notes',editNoteId):null;
+    if(!n)n={id:editNoteId||uid(),vacationId:vacId,added:Date.now()};
+    n.title=title;n.content=content;n.color=S.noteColor;n.protected=$('#noteProtected').checked;n.modified=Date.now();
+    await dbPut('notes',n);closeModals();toast(editNoteId?'Notitie bijgewerkt':'Notitie opgeslagen');editNoteId=null;render();
+  }
+
+  // ===== Categorie modal =====
+  function openCatModal(){
+    S.catEmoji=CAT_EMOJIS[0];$('#catName').value='';
+    renderEmojiPicker('catEmojiPicker',CAT_EMOJIS,S.catEmoji,e=>{S.catEmoji=e;});
+    $('#catModal').classList.add('show');setTimeout(()=>$('#catName').focus(),120);
+  }
+  async function saveCat(){
+    const label=$('#catName').value.trim();if(!label){toast('Geef de categorie een naam');return;}
+    const vac=await dbGet('vacations',S.vacId);if(!vac)return;
+    if(!vac.customCategories)vac.customCategories=[];
+    vac.customCategories.push({id:uid(),label,emoji:S.catEmoji});
+    await dbPut('vacations',vac);closeModals();toast('Categorie toegevoegd');render();
+  }
+
+  // ===== Rename modal =====
+  let renameCb=null;
+  function openRenameModal(title,cur,cb){
+    $('#renameModalTitle').textContent=title;$('#renameInput').value=cur;renameCb=cb;
+    $('#renameModal').classList.add('show');
+    setTimeout(()=>{const i=$('#renameInput');i.focus();i.select();},120);
+  }
+  async function saveRename(){
+    const name=$('#renameInput').value.trim();if(!name){toast('Naam mag niet leeg zijn');return;}
+    if(renameCb){await renameCb(name);renameCb=null;}closeModals();
+  }
+
+  // ===== Viewers =====
+  let pdfDoc=null,pdfScale=1.2,blobUrl=null,imgBlobUrl=null,pdfFallback=false;
+  let currentViewerFile=null; // voor delen
+  async function openFileViewer(f){
+    currentViewerFile = f;
+    let data;
+    try{data=f.data instanceof ArrayBuffer?f.data:await new Response(f.data).arrayBuffer();}
+    catch{toast('Kan bestand niet lezen');return;}
+    const fi=getFileInfo(f.mimeType,f.fileName||f.name);
+    if(fi.type==='pdf'){openPdfView(f,data);}
+    else if(fi.type==='image'){openImgView(f,data);}
+    else if(fi.type==='text'){
+      const text=new TextDecoder().decode(data);
+      $('#pdfViewerTitle').textContent=f.name;
+      $('#pdfContent').innerHTML=`<pre style="color:#fff;padding:16px;text-align:left;white-space:pre-wrap;font-size:14px;line-height:1.6;">${esc(text)}</pre>`;
+      $('#pdfZoomIn').style.display='none';$('#pdfZoomOut').style.display='none';
+      $('#pdfViewer').classList.add('show');
+    }else{
+      const blob=new Blob([data],{type:f.mimeType||'application/octet-stream'});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');a.href=url;a.download=f.fileName||f.name;a.click();
+      setTimeout(()=>URL.revokeObjectURL(url),1000);toast('Bestand wordt gedownload');
+    }
+  }
+  async function openPdfView(f, data) {
+    if (blobUrl) { URL.revokeObjectURL(blobUrl); blobUrl = null; }
+    blobUrl = URL.createObjectURL(new Blob([data], { type: 'application/pdf' }));
+
+    $('#pdfViewerTitle').textContent = f.name;
+    $('#pdfContent').innerHTML = '<div class="pdf-loading">PDF laden...</div>';
+    $('#pdfContent').style.position = '';
+    $('#pdfZoomIn').style.display = '';
+    $('#pdfZoomOut').style.display = '';
+    pdfFallback = false;
+    $('#pdfViewer').classList.add('show');
+
+    // Wacht tot PDF.js geladen is (kan iets langer duren op mobiel)
+    let attempts = 0;
+    while (!window.pdfjsLib && attempts++ < 20) {
+      await new Promise(r => setTimeout(r, 200));
+    }
+
+    if (window.pdfjsLib) {
+      try {
+        pdfDoc = await pdfjsLib.getDocument(blobUrl).promise;
+        pdfScale = Math.max(0.8, Math.min(2.0, ($('#pdfContent').clientWidth - 16) / 595));
+        await renderPdf();
+        return;
+      } catch(e) {
+        console.warn('PDF.js mislukt:', e);
+      }
+    }
+
+    // Fallback: download (laatste redmiddel)
+    pdfFallback = true;
+    $('#pdfZoomIn').style.display = 'none';
+    $('#pdfZoomOut').style.display = 'none';
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = f.fileName || (f.name + '.pdf');
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    $('#pdfContent').innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:30px;text-align:center;">
+        <div style="font-size:64px;margin-bottom:16px;">📄</div>
+        <div style="color:#fff;font-size:16px;font-weight:600;margin-bottom:8px;">${esc(f.name)}</div>
+        <div style="color:#aaa;font-size:14px;">De PDF is geopend in je PDF-viewer</div>
+      </div>`;
+  }
+  async function renderPdf(){
+    if(!pdfDoc)return;const c=$('#pdfContent');c.innerHTML='';
+    for(let i=1;i<=pdfDoc.numPages;i++){
+      const page=await pdfDoc.getPage(i);const vp=page.getViewport({scale:pdfScale});
+      const canvas=document.createElement('canvas');const r=window.devicePixelRatio||1;
+      canvas.width=vp.width*r;canvas.height=vp.height*r;
+      canvas.style.width=vp.width+'px';canvas.style.height=vp.height+'px';
+      const ctx=canvas.getContext('2d');ctx.scale(r,r);
+      c.appendChild(canvas);await page.render({canvasContext:ctx,viewport:vp}).promise;
+    }
+  }
+  function closePdf(){
+    $('#pdfViewer').classList.remove('show');$('#pdfContent').innerHTML='';$('#pdfContent').style.position='';
+    pdfDoc=null;if(blobUrl){URL.revokeObjectURL(blobUrl);blobUrl=null;}
+  }
+  function openImgView(f,data){
+    if(imgBlobUrl)URL.revokeObjectURL(imgBlobUrl);
+    imgBlobUrl=URL.createObjectURL(new Blob([data],{type:f.mimeType||'image/jpeg'}));
+    $('#imgViewerTitle').textContent=f.name;
+    $('#imgContent').innerHTML=`<img src="${imgBlobUrl}" alt="${esc(f.name)}">`;
+    $('#imgViewer').classList.add('show');
+  }
+  function closeImg(){
+    $('#imgViewer').classList.remove('show');$('#imgContent').innerHTML='';
+    if(imgBlobUrl){URL.revokeObjectURL(imgBlobUrl);imgBlobUrl=null;}
+  }
+
+  // ===== Item HTML helpers =====
+  function fileItemHtml(f){
+    const fi=getFileInfo(f.mimeType,f.fileName||f.name);
+    const clr=f.color&&f.color!=='none'?` clr-${f.color}`:'';
+    const lc=f.protected?'locked':'unlocked';
+    const li=f.protected?'🔒':'🔓';
+    return `<li class="pdf-item${clr}" data-file="${f.id}">
+      <span class="pdf-icon">${fi.icon}</span>
+      <span class="pdf-name">${esc(f.name)}</span>
+      <button class="item-btn lock-btn ${lc}" data-lock="${f.id}" data-store="pdfs" title="${f.protected?'Beveiliging uitzetten':'Beveiliging inschakelen'}">${li}</button>
+      <button class="item-btn" data-fren="${f.id}" title="Hernoemen">&#9998;&#65039;</button>
+      <button class="item-btn" data-fdel="${f.id}" title="Verwijderen" style="color:#e53935;">&#10005;</button>
+    </li>`;
+  }
+  function noteItemHtml(n){
+    const clr=n.color&&n.color!=='none'?` clr-${n.color}`:'';
+    const lc=n.protected?'locked':'unlocked';
+    const li=n.protected?'🔒':'🔓';
+    const prev=(n.content||'').replace(/\s+/g,' ').trim().slice(0,80);
+    return `<li class="note-item${clr}" data-note="${n.id}">
+      <div class="note-item-head">
+        <span class="ico">📝</span>
+        <span class="title">${esc(n.title||'(zonder titel)')}</span>
+        <span class="note-actions">
+          <button class="item-btn lock-btn ${lc}" data-lock="${n.id}" data-store="notes" title="${n.protected?'Beveiliging uitzetten':'Beveiliging inschakelen'}">${li}</button>
+          <button class="item-btn" data-nren="${n.id}">&#9998;&#65039;</button>
+          <button class="item-btn" data-ndel="${n.id}" style="color:#e53935;">&#10005;</button>
+        </span>
+      </div>
+      ${prev?`<div class="preview">${esc(prev)}${(n.content||'').length>80?'…':''}</div>`:''}
+    </li>`;
+  }
+
+  function bindItemEvents(c){
+    c.querySelectorAll('.pdf-item').forEach(el=>el.addEventListener('click',async e=>{
+      if(e.target.closest('[data-fdel],[data-fren],[data-lock]'))return;
+      const f=await dbGet('pdfs',el.dataset.file);if(!f)return;
+      if(f.protected && S.bioAvailable){const ok=await checkBio();if(!ok)return;}
+      openFileViewer(f);
+    }));
+    c.querySelectorAll('[data-fdel]').forEach(btn=>btn.addEventListener('click',async e=>{
+      e.stopPropagation();const f=await dbGet('pdfs',btn.dataset.fdel);
+      if(confirm(`"${f.name}" verwijderen?`)){await dbDelete('pdfs',f.id);toast('Verwijderd');render();}
+    }));
+    c.querySelectorAll('[data-fren]').forEach(btn=>btn.addEventListener('click',async e=>{
+      e.stopPropagation();const f=await dbGet('pdfs',btn.dataset.fren);
+      openRenameModal('Bestand hernoemen',f.name,async name=>{f.name=name;await dbPut('pdfs',f);toast('Hernoemd');render();});
+    }));
+    c.querySelectorAll('.note-item').forEach(el=>el.addEventListener('click',async e=>{
+      if(e.target.closest('[data-ndel],[data-nren],[data-lock]'))return;
+      const n=await dbGet('notes',el.dataset.note);if(!n)return;
+      if(n.protected && S.bioAvailable){const ok=await checkBio();if(!ok)return;}
+      openNoteModal(el.dataset.note);
+    }));
+    c.querySelectorAll('[data-ndel]').forEach(btn=>btn.addEventListener('click',async e=>{
+      e.stopPropagation();const n=await dbGet('notes',btn.dataset.ndel);
+      if(confirm(`Notitie "${n.title||'(zonder titel)'}" verwijderen?`)){await dbDelete('notes',n.id);toast('Verwijderd');render();}
+    }));
+    c.querySelectorAll('[data-nren]').forEach(btn=>btn.addEventListener('click',async e=>{
+      e.stopPropagation();const n=await dbGet('notes',btn.dataset.nren);
+      openRenameModal('Notitie hernoemen',n.title||'',async name=>{n.title=name;await dbPut('notes',n);toast('Hernoemd');render();});
+    }));
+    c.querySelectorAll('[data-lock]').forEach(btn=>btn.addEventListener('click',async e=>{
+      e.stopPropagation();await toggleLock(btn.dataset.store,btn.dataset.lock);
+    }));
+  }
+
+  // ===== Render =====
+  async function render(){
+    const sb=$('#sortBar');
+    // Reset filter bij wisselen van view
+    if(S.view==='list'||S.view==='search'){S.filterCats=null;}
+    if(S.view==='list'){
+      $('#backBtn').classList.remove('show');
+      $('#headerTitle').textContent='Mijn Vakanties';
+      $('#fab').style.display='flex';sb.classList.remove('show');
+      await renderList();
+    }else if(S.view==='vacation'){
+      $('#backBtn').classList.add('show');
+      const v=await dbGet('vacations',S.vacId);
+      $('#headerTitle').textContent=v?`${v.emoji} ${v.name}`:'Vakantie';
+      $('#fab').style.display='flex';sb.classList.add('show');
+      updateFilterBtn();
+      await renderDetail();
+    }else if(S.view==='personal'){
+      $('#backBtn').classList.add('show');
+      const pc=PERSONAL_CATS[S.personalCat];
+      $('#headerTitle').textContent=`${pc.emoji} ${pc.label}`;
+      $('#fab').style.display='flex';sb.classList.add('show');
+      $('#filterBtn').style.display='none';
+      await renderPersonal();
+    }else{
+      $('#backBtn').classList.add('show');
+      $('#headerTitle').textContent='Zoekresultaten';
+      $('#fab').style.display='none';sb.classList.remove('show');
+      await renderSearch();
+    }
+  }
+
+  function updateFilterBtn(){
+    const btn=$('#filterBtn');
+    btn.style.display='';
+    if(S.filterCats&&S.filterCats.size>0){
+      btn.classList.add('active');
+      btn.innerHTML=`&#9660; Filter <span class="filter-badge">${S.filterCats.size}</span>`;
+    }else{
+      btn.classList.remove('active');
+      btn.innerHTML='&#9660; Filter';
+    }
+  }
+
+  async function renderList(){
+    const vacs=await dbGetAll('vacations');
+    const allPersonal=await dbIdx('pdfs','vacationId',PERSONAL_ID);
+    const c=$('#content');
+    let html='';
+
+    // Persoonlijke documenten
+    html+=`<div class="section-label">Persoonlijke documenten</div><div class="personal-grid">`;
+    for(const[key,pc] of Object.entries(PERSONAL_CATS)){
+      if(S.visiblePersonal && !S.visiblePersonal.has(key)) continue;
+      const files=allPersonal.filter(f=>f.category===key);
+      const cnt=files.length;
+      const anyLocked=files.some(f=>f.protected);
+      html+=`<div class="personal-card ${key}" data-pcat="${key}">
+        <div class="pc-emoji">${pc.emoji}</div>
+        <div class="pc-name">${pc.label}</div>
+        <div class="pc-count">${cnt?cnt+' bestand'+(cnt===1?'':'en'):'Leeg'}</div>
+        ${anyLocked?'<div class="pc-lock">🔒</div>':''}
+      </div>`;
+    }
+    html+=`</div>`;
+
+    // Vakanties
+    html+=`<div class="section-label" style="margin-top:4px;">Vakanties</div>`;
+    const filteredVacs = S.visibleVacations
+      ? vacs.filter(v => S.visibleVacations.has(v.id))
+      : vacs;
+    if(filteredVacs.length){
+      const sorted=filteredVacs.sort((a,b)=>(b.created||0)-(a.created||0));
+      const counts=await Promise.all(sorted.map(async v=>{
+        const[f,n]=await Promise.all([dbIdx('pdfs','vacationId',v.id),dbIdx('notes','vacationId',v.id)]);
+        return{f:f.length,n:n.length};
+      }));
+      html+=`<div class="vacation-grid">${sorted.map((v,i)=>{
+        const parts=[];
+        if(counts[i].f)parts.push(`${counts[i].f} ${counts[i].f===1?'bestand':'bestanden'}`);
+        if(counts[i].n)parts.push(`${counts[i].n} ${counts[i].n===1?'notitie':'notities'}`);
+        return`<div class="vacation-card" data-id="${v.id}">
+          <div class="emoji">${v.emoji}</div>
+          <div class="info"><div class="name">${esc(v.name)}</div><div class="meta">${parts.join(' · ')||'Leeg'}</div></div>
+          <button class="vac-btn" data-ren="${v.id}" title="Hernoemen">&#9998;&#65039;</button>
+          <button class="vac-btn" data-del="${v.id}" title="Verwijderen" style="color:#e53935;">&#128465;&#65039;</button>
+        </div>`;
+      }).join('')}</div>`;
+    }else if(vacs.length){
+      html+=`<div class="empty" style="padding:20px;"><div class="ico" style="font-size:36px;">🔍</div><p>Alles verborgen door filter.<br>Tik op ⚙️ om aan te passen.</p></div>`;
+    }else{
+      html+=`<div class="empty" style="padding:30px 20px;"><div class="ico">🏖️</div><p>Nog geen vakanties.<br>Tik op <strong>+</strong> om te beginnen.</p></div>`;
+    }
+
+    c.innerHTML=html;
+
+    c.querySelectorAll('[data-pcat]').forEach(el=>el.addEventListener('click',()=>{S.personalCat=el.dataset.pcat;S.view='personal';render();}));
+    c.querySelectorAll('.vacation-card').forEach(el=>el.addEventListener('click',e=>{
+      if(e.target.closest('[data-del],[data-ren]'))return;
+      S.vacId=el.dataset.id;S.view='vacation';render();
+    }));
+    c.querySelectorAll('[data-del]').forEach(btn=>btn.addEventListener('click',async e=>{
+      e.stopPropagation();const v=await dbGet('vacations',btn.dataset.del);
+      if(confirm(`"${v.name}" en alle inhoud verwijderen?`)){await dbDeleteVacation(v.id);toast('Vakantie verwijderd');render();}
+    }));
+    c.querySelectorAll('[data-ren]').forEach(btn=>btn.addEventListener('click',async e=>{
+      e.stopPropagation();const v=await dbGet('vacations',btn.dataset.ren);
+      openRenameModal('Vakantie hernoemen',v.name,async name=>{v.name=name;await dbPut('vacations',v);toast('Hernoemd');render();});
+    }));
+  }
+
+  async function renderPersonal(){
+    const files=(await dbIdx('pdfs','vacationId',PERSONAL_ID)).filter(f=>f.category===S.personalCat);
+    const c=$('#content');
+    if(!files.length){
+      c.innerHTML=`<div class="empty"><div class="ico">${PERSONAL_CATS[S.personalCat].emoji}</div><p>Nog leeg.<br>Tik op <strong>+</strong> om een document toe te voegen.<br><br><small style="color:#aaa;">Tip: schakel 🔒 in per document voor vingerafdrukbeveiliging.</small></p></div>`;
+      return;
+    }
+    const sorted=sortItems(files,S.sort);
+    c.innerHTML=`<div class="category-section">
+      <div class="category-header">
+        <span class="cat-emoji">${PERSONAL_CATS[S.personalCat].emoji}</span>
+        <span>${PERSONAL_CATS[S.personalCat].label}</span>
+        <span class="count">${sorted.length}</span>
+      </div>
+      <ul class="pdf-list">${sorted.map(fileItemHtml).join('')}</ul>
+    </div>`;
+    bindItemEvents(c);
+  }
+
+  async function renderDetail(){
+    const vac=await dbGet('vacations',S.vacId);
+    const CATS=getAllCats(vac);
+    const[files,notes]=await Promise.all([dbIdx('pdfs','vacationId',S.vacId),dbIdx('notes','vacationId',S.vacId)]);
+    const c=$('#content');
+    if(!files.length&&!notes.length){
+      c.innerHTML=`<div class="empty"><div class="ico">📁</div><p>Nog leeg.<br>Tik op <strong>+</strong> om een bestand of notitie toe te voegen.</p></div>`;
+      return;
+    }
+    let html='';
+    if(notes.length){
+      // Filter: notities tonen als geen filter actief of '__notes__' geselecteerd
+      const showNotes = !S.filterCats || S.filterCats.size===0 || S.filterCats.has('__notes__');
+      if(showNotes){
+      html+=`<div class="category-section">
+        <div class="category-header"><span class="cat-emoji">📝</span><span>Notities</span><span class="count">${notes.length}</span></div>
+        <ul class="pdf-list">${sortItems(notes,S.sort).map(noteItemHtml).join('')}</ul>
+      </div>`;
+      }
+    }
+    const groups={};
+    files.forEach(f=>{const k=f.category||'overig';if(!groups[k])groups[k]=[];groups[k].push(f);});
+    const catOrder=[...Object.keys(DEFAULT_CATS),...(vac?.customCategories||[]).map(cc=>cc.id)];
+    catOrder.forEach(cat=>{
+      if(!groups[cat])return;
+      // Filter toepassen
+      if(S.filterCats&&S.filterCats.size>0&&!S.filterCats.has(cat))return;
+      const ci=CATS[cat]||DEFAULT_CATS.overig;
+      html+=`<div class="category-section">
+        <div class="category-header"><span class="cat-emoji">${ci.emoji}</span><span>${esc(ci.label)}</span><span class="count">${groups[cat].length}</span></div>
+        <ul class="pdf-list">${sortItems(groups[cat],S.sort).map(fileItemHtml).join('')}</ul>
+      </div>`;
+    });
+    c.innerHTML=html;
+    bindItemEvents(c);
+  }
+
+  async function renderSearch(){
+    const q=S.q.toLowerCase().trim();const c=$('#content');
+    if(!q){c.innerHTML=`<div class="empty"><div class="ico">🔍</div><p>Typ iets om te zoeken.</p></div>`;return;}
+    const[vacs,files,notes]=await Promise.all([dbGetAll('vacations'),dbGetAll('pdfs'),dbGetAll('notes')]);
+    const vacMap=Object.fromEntries(vacs.map(v=>[v.id,v]));
+    vacMap[PERSONAL_ID]={name:'Persoonlijke documenten',emoji:'🔐'};
+    const mv=vacs.filter(v=>v.name.toLowerCase().includes(q));
+    const mf=files.filter(f=>f.name.toLowerCase().includes(q));
+    const mn=notes.filter(n=>(n.title||'').toLowerCase().includes(q)||(n.content||'').toLowerCase().includes(q));
+    if(!mv.length&&!mf.length&&!mn.length){c.innerHTML=`<div class="empty"><div class="ico">🔍</div><p>Geen resultaten voor "<strong>${esc(S.q)}</strong>".</p></div>`;return;}
+    let html='';
+    if(mv.length){html+=`<div class="section-label">Vakanties</div><div class="vacation-grid" style="margin-bottom:16px;">${mv.map(v=>`<div class="vacation-card" data-id="${v.id}"><div class="emoji">${v.emoji}</div><div class="info"><div class="name">${esc(v.name)}</div><div class="meta">Vakantie</div></div></div>`).join('')}</div>`;}
+    if(mf.length){html+=`<div class="section-label">Bestanden</div><div class="category-section" style="margin-bottom:16px;"><ul class="pdf-list">${mf.map(f=>{const v=vacMap[f.vacationId];const fi=getFileInfo(f.mimeType,f.fileName||f.name);return`<li class="pdf-item" data-file="${f.id}"><span class="pdf-icon">${fi.icon}</span><span class="pdf-name">${esc(f.name)}<br><small style="color:#6b7480;font-size:12px;">${v?esc(v.name):''}</small></span></li>`;}).join('')}</ul></div>`;}
+    if(mn.length){html+=`<div class="section-label">Notities</div><div class="category-section"><ul class="pdf-list">${mn.map(n=>{const v=vacMap[n.vacationId];const prev=(n.content||'').replace(/\s+/g,' ').trim().slice(0,60);return`<li class="note-item" data-note="${n.id}"><div class="note-item-head"><span class="ico">📝</span><span class="title">${esc(n.title||'(zonder titel)')}</span></div><div class="preview">${esc(prev)}${prev?' · ':''}<em>${v?esc(v.name):''}</em></div></li>`;}).join('')}</ul></div>`;}
+    c.innerHTML=html;
+    c.querySelectorAll('.vacation-card').forEach(el=>el.addEventListener('click',()=>{S.vacId=el.dataset.id;S.view='vacation';$('#searchWrap').classList.remove('show');render();}));
+    c.querySelectorAll('.pdf-item').forEach(el=>el.addEventListener('click',async()=>{const f=await dbGet('pdfs',el.dataset.file);if(f){if(f.protected && S.bioAvailable){const ok=await checkBio();if(!ok)return;}openFileViewer(f);}}));
+    c.querySelectorAll('.note-item').forEach(el=>el.addEventListener('click',()=>{const n=mn.find(x=>x.id===el.dataset.note);if(n){S.vacId=n.vacationId;S.view='vacation';$('#searchWrap').classList.remove('show');render().then(()=>openNoteModal(n.id));}}));
+  }
+
+  // ===== Events =====
+  $('#fab').addEventListener('click',()=>{
+    if(S.view==='list')openVacationModal();
+    else if(S.view==='personal')openUploadModal(PERSONAL_ID,S.personalCat);
+    else $('#addChoiceModal').classList.add('show');
+  });
+  $('#addChoiceFile').addEventListener('click',()=>{closeModals();openUploadModal(S.vacId,null);});
+  $('#addChoiceNote').addEventListener('click',()=>{closeModals();openNoteModal();});
+  $('#addChoiceCat').addEventListener('click',()=>{closeModals();openCatModal();});
+
+  $('#backBtn').addEventListener('click',()=>{
+    if(S.view==='search'){$('#searchWrap').classList.remove('show');$('#searchInput').value='';S.q='';}
+    S.view='list';S.vacId=null;S.personalCat=null;render();
+  });
+  $('#searchBtn').addEventListener('click',()=>{
+    const shown=$('#searchWrap').classList.toggle('show');
+    if(shown)$('#searchInput').focus();
+    else{$('#searchInput').value='';S.q='';if(S.view==='search'){S.view='list';render();}}
+  });
+  $('#searchInput').addEventListener('input',e=>{S.q=e.target.value;S.view=S.q.trim()?'search':'list';render();});
+  $$('[data-sort]').forEach(btn=>btn.addEventListener('click',()=>{
+    S.sort=btn.dataset.sort;$$('[data-sort]').forEach(b=>b.classList.remove('active'));btn.classList.add('active');render();
+  }));
+  $$('[data-close]').forEach(btn=>btn.addEventListener('click',closeModals));
+  $$('.modal-overlay').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeModals();}));
+  $('#filterBtn').addEventListener('click', async () => {
+    // Bouw lijst van beschikbare categorieën op
+    const vac = await dbGet('vacations', S.vacId);
+    const CATS = getAllCats(vac);
+    const files = await dbIdx('pdfs','vacationId',S.vacId);
+    const notes = await dbIdx('notes','vacationId',S.vacId);
+
+    // Welke categorieën hebben items?
+    const usedCats = new Set(files.map(f=>f.category||'overig'));
+    const catOrder = [...Object.keys(DEFAULT_CATS),...(vac?.customCategories||[]).map(cc=>cc.id)];
+
+    const list = $('#filterCatList');
+    list.innerHTML = '';
+
+    // Notities
+    if(notes.length){
+      const checked = !S.filterCats || S.filterCats.size===0 || S.filterCats.has('__notes__');
+      list.innerHTML += `<label style="display:flex;align-items:center;gap:12px;padding:10px 4px;font-size:15px;cursor:pointer;border-bottom:1px solid #f2f4f6;">
+        <input type="checkbox" value="__notes__" ${checked?'checked':''} style="width:20px;height:20px;accent-color:#0a7e8c;cursor:pointer;">
+        <span>📝 Notities <span style="color:#aaa;font-size:12px;">(${notes.length})</span></span>
+      </label>`;
+    }
+
+    // Bestanden per categorie
+    catOrder.forEach(cat => {
+      if(!usedCats.has(cat))return;
+      const ci = CATS[cat]||DEFAULT_CATS.overig;
+      const cnt = files.filter(f=>(f.category||'overig')===cat).length;
+      const checked = !S.filterCats || S.filterCats.size===0 || S.filterCats.has(cat);
+      list.innerHTML += `<label style="display:flex;align-items:center;gap:12px;padding:10px 4px;font-size:15px;cursor:pointer;border-bottom:1px solid #f2f4f6;">
+        <input type="checkbox" value="${cat}" ${checked?'checked':''} style="width:20px;height:20px;accent-color:#0a7e8c;cursor:pointer;">
+        <span>${ci.emoji} ${esc(ci.label)} <span style="color:#aaa;font-size:12px;">(${cnt})</span></span>
+      </label>`;
+    });
+
+    $('#filterModal').classList.add('show');
+  });
+
+  $('#filterApply').addEventListener('click', () => {
+    const checked = [...$$('#filterCatList input[type=checkbox]:checked')].map(i=>i.value);
+    const total   = [...$$('#filterCatList input[type=checkbox]')].length;
+    S.filterCats = checked.length === total ? null : new Set(checked);
+    closeModals();
+    updateFilterBtn();
+    render();
+  });
+
+  $('#filterReset').addEventListener('click', () => {
+    S.filterCats = null;
+    closeModals();
+    updateFilterBtn();
+    render();
+  });
+
+  $('#vacationSave').addEventListener('click',saveVacation);
+  $('#vacationName').addEventListener('keydown',e=>{if(e.key==='Enter')saveVacation();});
+  $('#fileInput').addEventListener('change',e=>{$('#fileSave').disabled=!e.target.files.length;});
+  $('#fileSave').addEventListener('click',saveFile);
+  $('#noteSave').addEventListener('click',saveNote);
+  $('#catSave').addEventListener('click',saveCat);
+  $('#catName').addEventListener('keydown',e=>{if(e.key==='Enter')saveCat();});
+  $('#renameSave').addEventListener('click',saveRename);
+  $('#renameInput').addEventListener('keydown',e=>{if(e.key==='Enter')saveRename();});
+  // ===== Handleiding =====
+  const HELP_TABS = {
+    start: {
+      label: 'Start',
+      html: `
+        <div class="help-section">
+          <h3>👋 Welkom bij Vakantie Documenten</h3>
+          <p>Met deze app sla je al je reisdocumenten veilig op je telefoon op. Altijd bij de hand, ook zonder internet.</p>
+        </div>
+        <div class="help-section">
+          <h3>🗺️ Hoe is de app opgebouwd?</h3>
+          <div class="help-step"><div class="nr">1</div><div class="txt"><strong>Persoonlijke documenten</strong> — bovenaan het hoofdscherm. Hier staan paspoort, creditcard, rijbewijs en reisverzekering. Altijd zichtbaar, ongeacht vakantie.</div></div>
+          <div class="help-step"><div class="nr">2</div><div class="txt"><strong>Vakanties</strong> — je maakt een vakantie aan (bijv. "Sardinië 2026") en voegt daar bestanden en notities aan toe.</div></div>
+          <div class="help-step"><div class="nr">3</div><div class="txt"><strong>Categorieën</strong> — binnen een vakantie zijn bestanden ingedeeld op categorie: vlucht, hotel, autohuur, enz.</div></div>
+        </div>
+        <div class="help-section">
+          <h3>⚡ Knoppen bovenin</h3>
+          <div class="help-step"><div class="nr">?</div><div class="txt"><strong>?</strong> — deze handleiding</div></div>
+          <div class="help-step"><div class="nr">⚙</div><div class="txt"><strong>⚙️</strong> — kies welke vakanties en persoonlijke documenten je wilt zien op het hoofdscherm</div></div>
+          <div class="help-step"><div class="nr">🔍</div><div class="txt"><strong>🔍</strong> — zoek door alle documenten en notities</div></div>
+          <div class="help-step"><div class="nr">+</div><div class="txt"><strong>+</strong> — iets toevoegen (vakantie, bestand, notitie of categorie)</div></div>
+        </div>`
+    },
+    persoonlijk: {
+      label: 'Persoonlijk',
+      html: `
+        <div class="help-section">
+          <h3>🛂 Persoonlijke documenten</h3>
+          <p style="margin-bottom:12px;">De vier vaste categorieën op het hoofdscherm zijn voor documenten die je altijd bij je hebt, ongeacht de vakantie.</p>
+          <div class="help-step"><div class="nr">1</div><div class="txt">Tik op <strong>🛂 Paspoort</strong>, <strong>💳 Creditcard</strong>, <strong>🛡️ Reisverzekering</strong> of <strong>🚗 Rijbewijs</strong></div></div>
+          <div class="help-step"><div class="nr">2</div><div class="txt">Tik op <strong>+</strong> om een foto of PDF toe te voegen</div></div>
+          <div class="help-step"><div class="nr">3</div><div class="txt">Geef het document een naam en kies eventueel een kleur</div></div>
+          <div class="help-step"><div class="nr">4</div><div class="txt">Sla op — het document is direct beschikbaar</div></div>
+        </div>
+        <div class="help-tip">💡 Paspoort en creditcard zijn standaard beveiligd met vingerafdruk. Je kunt dit per document aan- of uitzetten met het 🔒/🔓 knopje.</div>
+        <div class="help-section">
+          <h3>⚙️ Zichtbaarheid instellen</h3>
+          <p>Wil je een bepaalde categorie verbergen op het hoofdscherm? Tik op ⚙️ en zet het vinkje uit.</p>
+        </div>`
+    },
+    vakanties: {
+      label: 'Vakanties',
+      html: `
+        <div class="help-section">
+          <h3>🏖️ Een vakantie aanmaken</h3>
+          <div class="help-step"><div class="nr">1</div><div class="txt">Tik op <strong>+</strong> op het hoofdscherm</div></div>
+          <div class="help-step"><div class="nr">2</div><div class="txt">Geef de vakantie een naam (bijv. "Sardinië 2026")</div></div>
+          <div class="help-step"><div class="nr">3</div><div class="txt">Kies een emoji als icoon</div></div>
+          <div class="help-step"><div class="nr">4</div><div class="txt">Tik op <strong>Opslaan</strong></div></div>
+        </div>
+        <div class="help-section">
+          <h3>✏️ Vakantie hernoemen of verwijderen</h3>
+          <p>Op de vakantiekaart op het hoofdscherm staan twee knoppen: <strong>✏️</strong> om te hernoemen en <strong>🗑️</strong> om te verwijderen. Verwijderen verwijdert ook alle bestanden en notities in die vakantie.</p>
+        </div>
+        <div class="help-section">
+          <h3>🏷️ Eigen categorie toevoegen</h3>
+          <div class="help-step"><div class="nr">1</div><div class="txt">Open een vakantie en tik op <strong>+</strong></div></div>
+          <div class="help-step"><div class="nr">2</div><div class="txt">Kies <strong>Eigen categorie</strong></div></div>
+          <div class="help-step"><div class="nr">3</div><div class="txt">Kies een emoji en geef de categorie een naam</div></div>
+        </div>
+        <div class="help-section">
+          <h3>↕️ Sorteren en filteren</h3>
+          <p>Binnen een vakantie zie je bovenaan een balk met sorteerknoppen (nieuwste eerst / A→Z etc.) en een <strong>▼ Filter</strong> knop waarmee je alleen bepaalde categorieën toont.</p>
+        </div>`
+    },
+    bestanden: {
+      label: 'Bestanden',
+      html: `
+        <div class="help-section">
+          <h3>📁 Bestand toevoegen</h3>
+          <div class="help-step"><div class="nr">1</div><div class="txt">Open een vakantie of persoonlijke categorie</div></div>
+          <div class="help-step"><div class="nr">2</div><div class="txt">Tik op <strong>+</strong> → <strong>Bestand</strong></div></div>
+          <div class="help-step"><div class="nr">3</div><div class="txt">Kies een categorie (vlucht, hotel, enz.)</div></div>
+          <div class="help-step"><div class="nr">4</div><div class="txt">Geef optioneel een eigen naam op</div></div>
+          <div class="help-step"><div class="nr">5</div><div class="txt">Kies het bestand van je telefoon (meerdere tegelijk mogelijk)</div></div>
+          <div class="help-step"><div class="nr">6</div><div class="txt">Kies een kleur en tik op <strong>Opslaan</strong></div></div>
+        </div>
+        <div class="help-section">
+          <h3>📄 Ondersteunde bestandstypen</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px;">
+            <div style="background:#f4f6f8;border-radius:8px;padding:8px 10px;font-size:13px;">📄 PDF</div>
+            <div style="background:#f4f6f8;border-radius:8px;padding:8px 10px;font-size:13px;">🖼️ Foto's</div>
+            <div style="background:#f4f6f8;border-radius:8px;padding:8px 10px;font-size:13px;">📝 Word</div>
+            <div style="background:#f4f6f8;border-radius:8px;padding:8px 10px;font-size:13px;">📊 Excel</div>
+            <div style="background:#f4f6f8;border-radius:8px;padding:8px 10px;font-size:13px;">📃 Tekst</div>
+            <div style="background:#f4f6f8;border-radius:8px;padding:8px 10px;font-size:13px;">📎 Overig</div>
+          </div>
+        </div>
+        <div class="help-section">
+          <h3>📤 Bestand delen</h3>
+          <p>Open een PDF of foto en tik op <strong>📤</strong> rechtsboven. Op Android opent het deelmenu van je telefoon — kies WhatsApp, Gmail of een andere app.</p>
+        </div>
+        <div class="help-section">
+          <h3>📝 Notitie toevoegen</h3>
+          <p>Via <strong>+</strong> → <strong>Notitie</strong> voeg je een tekst-notitie toe. Handig voor reserveringsnummers, telefoonnummers of adressen. Je kunt een kleur kiezen (bijv. geel) voor snelle herkenning.</p>
+        </div>
+        <div class="help-section">
+          <h3>✏️ Bestand hernoemen</h3>
+          <p>Tik op het <strong>✏️</strong> knopje naast een bestand of notitie om de naam te wijzigen.</p>
+        </div>`
+    },
+    beveiliging: {
+      label: 'Beveiliging',
+      html: `
+        <div class="help-section">
+          <h3>🔒 Vingerafdrukbeveiliging</h3>
+          <p style="margin-bottom:12px;">Je kunt elk bestand of elke notitie afzonderlijk beveiligen met je vingerafdruk.</p>
+          <div class="help-step"><div class="nr">1</div><div class="txt">Tik op het <strong>🔓</strong> knopje naast een bestand → het wordt beveiligd (🔒 rood)</div></div>
+          <div class="help-step"><div class="nr">2</div><div class="txt">Eerste keer: de app vraagt je vingerafdruk te registreren (eenmalig)</div></div>
+          <div class="help-step"><div class="nr">3</div><div class="txt">Daarna wordt bij elke opening je vingerafdruk gevraagd</div></div>
+          <div class="help-step"><div class="nr">4</div><div class="txt">Beveiliging uitzetten: tik op <strong>🔒</strong> → vingerafdruk bevestigen → beveiliging uit</div></div>
+        </div>
+        <div class="help-tip">💡 Paspoort en creditcard zijn standaard beveiligd. Op een laptop zonder vingerafdruklezer openen beveiligde bestanden gewoon — de beveiliging werkt alleen op apparaten met een scanner.</div>
+        <div class="help-section">
+          <h3>👁️ Wat is beveiligd?</h3>
+          <p>Items met een rood 🔒 icoontje zijn beveiligd. Op de persoonlijke documentkaarten op het hoofdscherm zie je ook een 🔒 als er beveiligde bestanden in zitten.</p>
+        </div>`
+    },
+    tips: {
+      label: 'Tips',
+      html: `
+        <div class="help-section">
+          <h3>📱 App installeren op je telefoon</h3>
+          <div class="help-step"><div class="nr">1</div><div class="txt">Open de app in <strong>Chrome</strong> op je Android telefoon</div></div>
+          <div class="help-step"><div class="nr">2</div><div class="txt">Tik op de <strong>drie puntjes ⋮</strong> rechtsboven</div></div>
+          <div class="help-step"><div class="nr">3</div><div class="txt">Kies <strong>"App installeren"</strong> of <strong>"Toevoegen aan startscherm"</strong></div></div>
+          <div class="help-step"><div class="nr">4</div><div class="txt">De app verschijnt als icoon op je startscherm</div></div>
+        </div>
+        <div class="help-section">
+          <h3>🌐 Offline werken</h3>
+          <p>Na de eerste keer openen werkt de app ook zonder internet. Alle documenten zijn lokaal opgeslagen op je telefoon.</p>
+        </div>
+        <div class="help-section">
+          <h3>🎨 Kleuren gebruiken</h3>
+          <p>Gebruik kleuren om snel te herkennen wat iets is. Bijvoorbeeld: notities geel, vluchten blauw, hotel groen.</p>
+        </div>
+        <div class="help-section">
+          <h3>🔍 Zoeken</h3>
+          <p>De zoekfunctie (🔍 rechtsboven) doorzoekt alle vakanties, bestanden én notities tegelijk — ook de inhoud van notities.</p>
+        </div>
+        <div class="help-section">
+          <h3>⚙️ Hoofdscherm aanpassen</h3>
+          <p>Tik op ⚙️ om te kiezen welke vakanties en persoonlijke categorieën je op het hoofdscherm wilt zien. Handig als je meerdere vakanties hebt maar er nu maar één relevant is.</p>
+        </div>
+        <div class="help-tip">💡 Je gegevens staan alleen op jouw telefoon. Er wordt niets naar een server gestuurd — alles blijft lokaal en privé.</div>`
+    }
+  };
+
+  let activeHelpTab = 'start';
+
+  function openHelp(){
+    renderHelpTab(activeHelpTab);
+    $('#helpModal').classList.add('show');
+  }
+
+  function renderHelpTab(tab){
+    activeHelpTab = tab;
+    const data = HELP_TABS[tab];
+    $('#helpContent').innerHTML = data.html;
+    $$('.help-tab').forEach(b=>{
+      b.classList.toggle('active', b.dataset.tab === tab);
+    });
+  }
+
+  // Tab klikken
+  $$('.help-tab').forEach(btn=>{
+    btn.addEventListener('click', ()=> renderHelpTab(btn.dataset.tab));
+  });
+
+  $('#helpBtn').addEventListener('click', openHelp);
+  $('#startFilterBtn').addEventListener('click', openStartFilter);
+  $('#sfSelectAll').addEventListener('click', ()=>{
+    $$('#sfPersonal input, #sfVacations input').forEach(b=>b.checked=true);
+  });
+
+  $('#pdfShare').addEventListener('click', async ()=>{
+    if(!currentViewerFile) return;
+    const f = currentViewerFile;
+    let data;
+    try{ data = f.data instanceof ArrayBuffer ? f.data : await new Response(f.data).arrayBuffer(); }
+    catch{ toast('Kan bestand niet lezen'); return; }
+    await shareFile(data, f.fileName||f.name+'.pdf', f.mimeType||'application/pdf');
+  });
+
+  $('#imgShare').addEventListener('click', async ()=>{
+    if(!currentViewerFile) return;
+    const f = currentViewerFile;
+    let data;
+    try{ data = f.data instanceof ArrayBuffer ? f.data : await new Response(f.data).arrayBuffer(); }
+    catch{ toast('Kan bestand niet lezen'); return; }
+    await shareFile(data, f.fileName||f.name, f.mimeType||'image/jpeg');
+  });
+
+  $('#pdfClose').addEventListener('click',closePdf);
+  $('#pdfZoomIn').addEventListener('click',async()=>{if(pdfFallback||!pdfDoc)return;pdfScale=Math.min(pdfScale*1.25,4);await renderPdf();});
+  $('#pdfZoomOut').addEventListener('click',async()=>{if(pdfFallback||!pdfDoc)return;pdfScale=Math.max(pdfScale/1.25,0.4);await renderPdf();});
+  $('#imgClose').addEventListener('click',closeImg);
+
+  window.addEventListener('popstate',()=>{
+    if($('#imgViewer').classList.contains('show')){closeImg();history.pushState(null,'');return;}
+    if($('#pdfViewer').classList.contains('show')){closePdf();history.pushState(null,'');return;}
+    if(document.querySelector('.modal-overlay.show')){closeModals();history.pushState(null,'');return;}
+    if(S.view!=='list'){S.view='list';S.vacId=null;S.personalCat=null;render();history.pushState(null,'');}
+  });
+  history.pushState(null,'');
+
+  let deferred=null;
+  window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e;if(!localStorage.getItem('installDismissed'))$('#installBanner').classList.add('show');});
+  $('#installBtn').addEventListener('click',async()=>{if(!deferred)return;deferred.prompt();await deferred.userChoice;deferred=null;$('#installBanner').classList.remove('show');});
+  $('#installClose').addEventListener('click',()=>{$('#installBanner').classList.remove('show');localStorage.setItem('installDismissed','1');});
+  if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('service-worker.js').catch(()=>{}));
+
+  (async()=>{
+    try{
+      await openDB();
+      S.bioAvailable=await isBioAvailable();
+      loadStartFilter();
+      render();
+      // Toon startfilter als er vakanties zijn en de filter nog niet is ingesteld
+      const vacs = await dbGetAll('vacations');
+      const hasContent = vacs.length > 0;
+      if(hasContent && !localStorage.getItem('sfShownBefore')){
+        localStorage.setItem('sfShownBefore','1');
+        setTimeout(()=>openStartFilter(), 400);
+      }
+    }catch(e){
+      document.body.innerHTML=`<div style="padding:40px;text-align:center;color:#c44;">Database fout: ${esc(e.message)}</div>`;
+    }
+  })();
+</script>
+</body>
+</html>
