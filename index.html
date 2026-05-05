@@ -176,7 +176,22 @@
   <button class="icon-btn" id="helpBtn" title="Handleiding">&#63;</button>
   <button class="icon-btn" id="startFilterBtn" title="Selecteer wat je wilt zien">&#9881;&#65039;</button>
   <button class="icon-btn" id="searchBtn">&#128269;</button>
+  <button class="icon-btn" id="menuBtn" title="Menu">&#8942;</button>
 </header>
+
+<!-- Export/Import menu -->
+<div class="modal-overlay" id="menuModal">
+  <div class="modal" style="max-width:340px;">
+    <h2>Opties</h2>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-top:16px;">
+      <button id="exportBtn" style="background:#0a7e8c;color:#fff;border:none;padding:14px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;">📤 Exporteer alle gegevens</button>
+      <button id="importBtn" style="background:#fff;color:#0a7e8c;border:2px solid #0a7e8c;padding:14px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;">📥 Importeer gegevens</button>
+      <input type="file" id="importFile" accept=".json" style="display:none;">
+      <p style="font-size:12px;color:#6b7480;text-align:center;line-height:1.5;">Exporteer je gegevens als back-up of om over te zetten naar een ander apparaat.</p>
+    </div>
+    <button style="margin-top:16px;width:100%;padding:12px;border:none;background:#f4f6f8;border-radius:10px;font-size:15px;cursor:pointer;" id="menuClose">Sluiten</button>
+  </div>
+</div>
 
 <div class="install-banner" id="installBanner">
   <span>Installeer op startscherm voor snelle toegang.</span>
@@ -1362,6 +1377,7 @@
   $('#sfSelectAll').addEventListener('click', ()=>{
     $$('#sfPersonal input, #sfVacations input').forEach(b=>b.checked=true);
   });
+  $('#sfApply').addEventListener('click', applyStartFilter);
 
   $('#pdfShare').addEventListener('click', async ()=>{
     if(!currentViewerFile) return;
@@ -1399,6 +1415,48 @@
   $('#installBtn').addEventListener('click',async()=>{if(!deferred)return;deferred.prompt();await deferred.userChoice;deferred=null;$('#installBanner').classList.remove('show');});
   $('#installClose').addEventListener('click',()=>{$('#installBanner').classList.remove('show');localStorage.setItem('installDismissed','1');});
   if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('service-worker.js').catch(()=>{}));
+
+  // ===== Export / Import =====
+  function bufToB64(buf){
+    let b='',u=new Uint8Array(buf);
+    for(let i=0;i<u.length;i+=8192)b+=String.fromCharCode(...u.subarray(i,i+8192));
+    return btoa(b);
+  }
+  function b64ToBuf(b64){
+    const s=atob(b64),u=new Uint8Array(s.length);
+    for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);
+    return u.buffer;
+  }
+  async function exportData(){
+    toast('Exporteren...');
+    const[vacations,pdfs,notes]=await Promise.all([dbGetAll('vacations'),dbGetAll('pdfs'),dbGetAll('notes')]);
+    const pdfsExp=pdfs.map(f=>({...f,data:f.data?bufToB64(f.data):null}));
+    const payload={version:1,exported:new Date().toISOString(),vacations,pdfs:pdfsExp,notes};
+    const blob=new Blob([JSON.stringify(payload)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download='vakantieapp-backup-'+new Date().toISOString().slice(0,10)+'.json';
+    a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+    toast('✅ Export klaar!');
+  }
+  async function importData(file){
+    try{
+      const text=await file.text();
+      const payload=JSON.parse(text);
+      if(!payload.version||!payload.vacations){toast('❌ Ongeldig bestand');return;}
+      let count=0;
+      for(const v of payload.vacations){await dbPut('vacations',v);count++;}
+      for(const f of payload.pdfs){f.data=f.data?b64ToBuf(f.data):null;await dbPut('pdfs',f);count++;}
+      for(const n of payload.notes){await dbPut('notes',n);count++;}
+      closeModals();render();
+      toast(`✅ ${count} items geïmporteerd!`);
+    }catch(e){toast('❌ Import mislukt: '+e.message);}
+  }
+  $('#menuBtn').addEventListener('click',()=>$('#menuModal').classList.add('show'));
+  $('#menuClose').addEventListener('click',closeModals);
+  $('#exportBtn').addEventListener('click',exportData);
+  $('#importBtn').addEventListener('click',()=>$('#importFile').click());
+  $('#importFile').addEventListener('change',e=>{const f=e.target.files[0];if(f)importData(f);e.target.value='';});
 
   (async()=>{
     try{
