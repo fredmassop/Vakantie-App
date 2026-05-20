@@ -1,17 +1,25 @@
 {
   "name": "Vakantie Documenten",
   "short_name": "Vakantie",
-  "description": "Sla al je reisdocumenten op één plek op",
-  "start_url": "/",
+  "description": "Beheer vakantiedocumenten, foto's en notities",
+  "start_url": "/Vakantie-App/",
+  "scope": "/Vakantie-App/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#f4f6f8",
   "theme_color": "#0a7e8c",
-  "orientation": "portrait",
+  "lang": "nl",
   "icons": [
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='40' fill='%230a7e8c'/><text y='130' x='96' text-anchor='middle' font-size='110'>🏖️</text></svg>",
+      "src": "icons/icon-192.png",
       "sizes": "192x192",
-      "type": "image/svg+xml",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ]
